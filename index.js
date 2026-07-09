@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } from "discord.js";
+import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, EmbedBuilder } from "discord.js";
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -257,6 +257,62 @@ const commands = [
         const next = current ? `${current} ${m}` : m;
         if (next.length > 1900) { chunks.push(current); current = m; }
         else { current = next; }
+      }
+      if (current) chunks.push(current);
+
+      await interaction.reply(chunks[0]);
+      for (let i = 1; i < chunks.length; i++) {
+        await interaction.followUp(chunks[i]);
+      }
+    },
+  },
+
+  {
+    data: new SlashCommandBuilder()
+      .setName("spam")
+      .setDescription("Flood the channel with a message a brutal amount of times")
+      .addStringOption((o) => o.setName("message").setDescription("What to spam").setRequired(true))
+      .addIntegerOption((o) =>
+        o.setName("amount").setDescription("How many times? (1–1000)").setRequired(true).setMinValue(1).setMaxValue(1000)
+      )
+      .addStringOption((o) =>
+        o
+          .setName("format")
+          .setDescription("Plain messages or embeds?")
+          .setRequired(false)
+          .addChoices({ name: "msg", value: "msg" }, { name: "embed", value: "embed" })
+      ),
+    async execute(interaction) {
+      const message = interaction.options.getString("message", true);
+      const amount = interaction.options.getInteger("amount", true);
+      const format = interaction.options.getString("format") ?? "msg";
+
+      if (format === "embed") {
+        const embeds = Array.from({ length: amount }, () => new EmbedBuilder().setDescription(message));
+        const embedChunks = [];
+        for (let i = 0; i < embeds.length; i += 10) {
+          embedChunks.push(embeds.slice(i, i + 10));
+        }
+
+        await interaction.reply({ embeds: embedChunks[0] });
+        for (let i = 1; i < embedChunks.length; i++) {
+          await interaction.followUp({ embeds: embedChunks[i] });
+        }
+        return;
+      }
+
+      // Plain message format
+      const lines = Array(amount).fill(message);
+      const chunks = [];
+      let current = "";
+      for (const line of lines) {
+        const next = current ? `${current}\n${line}` : line;
+        if (next.length > 1900) {
+          chunks.push(current);
+          current = line;
+        } else {
+          current = next;
+        }
       }
       if (current) chunks.push(current);
 
