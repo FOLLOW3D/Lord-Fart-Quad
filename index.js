@@ -239,7 +239,7 @@ const commands = [
 
   {
     data: new SlashCommandBuilder()
-      .setName("ping")
+      .setName("rommba")
       .setDescription("Spam mention someone a brutal amount of times")
       .addUserOption((o) => o.setName("target").setDescription("Who's getting pinged?").setRequired(true))
       .addIntegerOption((o) =>
