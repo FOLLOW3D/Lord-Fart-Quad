@@ -2,6 +2,9 @@ import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } from "di
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
+const ALLOWED_USER_IDS = process.env.ALLOWED_USER_IDS
+  ? new Set(process.env.ALLOWED_USER_IDS.split(",").map((id) => id.trim()))
+  : null; // null = no restriction, everyone can use it
 
 if (!BOT_TOKEN || !CLIENT_ID) {
   console.error("Missing BOT_TOKEN or CLIENT_ID environment variables.");
@@ -285,6 +288,13 @@ client.once("ready", () => {
 
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
+
+  // Allowlist check
+  if (ALLOWED_USER_IDS && !ALLOWED_USER_IDS.has(interaction.user.id)) {
+    await interaction.reply({ content: "you're not allowed to use this bot lmaooo", ephemeral: true });
+    return;
+  }
+
   const cmd = commandMap.get(interaction.commandName);
   if (!cmd) return;
   try {
